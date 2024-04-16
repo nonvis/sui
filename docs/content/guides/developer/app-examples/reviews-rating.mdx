@@ -162,6 +162,9 @@ The elements of `top_reviews` are sorted by the `total_score` of the reviews, wi
 the `ID` of the reviews (whose content and vote count can be looked up from the `reviews`).
 
 #### Casting votes
+
+Through the casting vote processes like below, we could watch how reviews will be rated on chain.
+
 ```move
 public fun upvote(service: &mut Service, review_id: ID) {
     let review = object_table::borrow_mut(&mut service.reviews, review_id);
