@@ -2,13 +2,13 @@
 title: Reviews Rating
 ---
 
-The following documentation goes through an example implementation of a review rating platform for the food service industry on Sui.
-Unlike traditional review rating platforms, that often do not disclose the algorithm used to rate reviews, the on-chain platform uses an algorithm that is published on-chain for everyone to see and verify.
+The following documentation goes through an example implementation of a review rating platform for the services wanted to built more transparent post-service review dapp top on the Sui protocol.
+This example shows to possbility unlike traditional review rating platforms which is not disclose the algorithm used to rate reviews, the on-chain platform uses an algorithm that is published on-chain for everyone to see and verify.
 Furthermore, all submitted reviews are scored and ordered on-chain which is feasible due to the low gas cost of computation on Sui.
 
 ## Personas
 
-There are four actors in the typical workflow of the reviews rating example.  
+There are four actors in the typical workflow of the reviews rating example.
 
 ```mermaid
 sequenceDiagram
@@ -42,13 +42,14 @@ The incentive mechanism for moderators is not implemented for this guide, but se
 
 ## How reviews are rated
 
-The reviews are rated (scored) on-chain using following criteria
+The reviews are rated (scored) on-chain using following criteria in this app like below;
+
 - Intrinsic score (IS)
-  - Length of content
+  - Length of review content
 - Extrinsic score (ES)
-  - Number of votes received
+  - Number of votes a review received
 - Verification multiplier (VM)
-  - Reviews with PoE get a multiplier to improve rating
+  - Reviews with PoE (Proof of Experience) socre get a multiplier to improve rating
 
 ```
 Total Score = (IS + ES) * VM
@@ -115,8 +116,35 @@ struct Service has key, store {
 ```
 
 #### Reward distribution
-The same amount is rewarded to top reviewers, and the reward is distributed to 10 participants at most.
-The pool of `SUI` tokens that will be distributed to reviewers is stored in `reward_pool` field, and the amount of `SUI` tokens that will be awarded to each participant is configured in `reward` field.
+The same amount is rewarded to top reviewers, and the reward is distributed to Top 10 reviews  at most.
+`SUI` tokens acted as reward that will be distributed to reviewers is stored in `reward_pool` field, and the amount of `SUI` tokens that will be awarded to each participant is configured in `reward` field.
+
+### review.move
+
+`Review` struct defines on review.move.
+
+In addition to the content of a review, all the elements that are required to compute total score are stored in a `Review` object.
+
+And `Review` is a [shared object](../../../concepts/object-ownership/shared.mdx), so anyone can cast a vote on a review and update its `total_score` field.
+After `total_score` is updated, the [`update_top_reviews`](#casting-votes) function can be called to update the `top_reviews` field of the `Service` object.
+
+```move
+struct Review has key, store {
+    id: UID,
+    owner: address,
+    service_id: ID,
+    content: String,
+    // intrinsic score
+    len: u64,
+    // extrinsic score
+    votes: u64,
+    time_issued: u64,
+    // proof of experience
+    has_poe: bool,
+    total_score: u64,
+    overall_rate: u8,
+}
+```
 
 #### Storage for reviews
 Since anyone can submit a review for a service, a `Service` should be defined as a shared object.
@@ -204,34 +232,6 @@ struct Moderator has key {
 
 This example follows a [capabilities pattern](../../../concepts/sui-move-concepts/patterns/capabilities.mdx) to manage authorizations.
 For example, `SERVICE OWNERS` are given `AdminCap` and `MODERATORS` are given `Moderator` such that only they are allowed to perform privileged operations.
-
-
-### review.move
-
-This module defines the `Review` struct.
-
-```move
-struct Review has key, store {
-    id: UID,
-    owner: address,
-    service_id: ID,
-    content: String,
-    // intrinsic score
-    len: u64,
-    // extrinsic score
-    votes: u64,
-    time_issued: u64,
-    // proof of experience
-    has_poe: bool,
-    total_score: u64,
-    overall_rate: u8,
-}
-```
-
-In addition to the content of a review, all the elements that are required to compute total score are stored in a `Review` object.
-
-A `Review` is a [shared object](../../../concepts/object-ownership/shared.mdx), so anyone can cast a vote on a review and update its `total_score` field.
-After `total_score` is updated, the [`update_top_reviews`](#casting-votes) function can be called to update the `top_reviews` field of the `Service` object.
 
 ## Deployment
 
